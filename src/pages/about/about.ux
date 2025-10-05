@@ -1,0 +1,165 @@
+<template>
+  <div class="page">
+    <div class="container">
+      <image class="background" src="/common/images/about.png"></image>
+      
+      <text class="version">{{version}}</text>
+      
+      <image class="back-btn" src="/common/images/back.png" onclick="back"></image>
+      
+      <!-- 常亮设置 -->
+      <div class="setting-item">
+        <text class="setting-text">常亮</text>
+        <div class="switch-container">
+          <switch class="setting-switch" checked="{{keepScreenOn}}" onchange="handleKeepScreenOnChange"></switch>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+  import router from '@system.router'
+  import app from '@system.app'
+  import brightness from '@system.brightness'
+  import storage from '@system.storage'
+  import prompt from '@system.prompt'
+
+  export default {
+    private: {
+      version: '',
+      keepScreenOn: false
+    },
+    onInit() {
+      this.version = app.getInfo().versionName
+      
+      // 读取存储的设置
+      var that = this
+      storage.get({
+        key: 'keepScreenOn',
+        success: function(data) {
+          that.keepScreenOn = (data === 'true')
+        }
+      })
+    },
+    handleKeepScreenOnChange(event) {
+      const checked = event.checked
+      this.keepScreenOn = checked
+      
+      var that = this
+      
+      // 保存设置到存储
+      storage.set({
+        key: 'keepScreenOn',
+        value: checked.toString(),
+        success: function() {
+          console.log('保存常亮设置成功')
+          // 应用设置
+          that.setKeepScreenOn(checked)
+        },
+        fail: function(data, code) {
+          console.log(`保存常亮设置失败，错误码：${code}`)
+        }
+      })
+    },
+    setKeepScreenOn(keepOn) {
+      // 按照官方文档的标准调用方式
+      brightness.setKeepScreenOn({
+        keepScreenOn: keepOn,
+        success: function() {
+          console.log('设置屏幕常亮成功')
+          prompt.showToast({
+            message: keepOn ? '已开启常亮' : '已关闭常亮',
+            duration: 1000
+          })
+        },
+        fail: function(data, code) {
+          console.log(`设置屏幕常亮失败，错误码：${code}`)
+          prompt.showToast({
+            message: '设置失败，设备可能不支持',
+            duration: 2000
+          })
+        }
+      })
+    },
+    back() {
+      router.back()
+    }
+  }
+</script>
+
+<style>
+  .page {
+    width: 212px;
+    height: 520px;
+    background-color: #000000;
+  }
+
+  .container {
+    width: 212px;
+    height: 520px;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .background {
+    width: 212px;
+    height: 520px;
+    position: absolute;
+    left: 0px;
+    top: 0px;
+  }
+
+  .version {
+    position: absolute;
+    left: 25px;
+    top: 169px;
+    width: 168px;
+    height: 47px;
+    font-weight: bold;
+    font-size: 35px;
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .back-btn {
+    position: absolute;
+    left: 49.5px;
+    top: 6.6px;
+    width: 113px;
+    height: 80px;
+  }
+
+  .setting-item {
+    position: absolute;
+    left: 10px;
+    top: 250px;
+    width: 192px;
+    height: 60px;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #1c1c1c;
+    padding: 15px;
+    border-radius: 36px;
+    border: 3px solid #262626;
+  }
+
+  .setting-text {
+    font-size: 24px;
+    color: #ffffff;
+    font-weight: bold;
+  }
+
+  .switch-container {
+    width: 80px;
+    height: 40px;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .setting-switch {
+    width: 60px;
+    height: 30px;
+    color: #4caf50;
+  }
+</style>
